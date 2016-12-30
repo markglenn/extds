@@ -1,4 +1,4 @@
-defmodule ExTdsTest.ExTds.Utils do
+defmodule ExTdsTest.ExTds.UtilsTest do
   use ExUnit.Case, async: true
   alias ExTds.Utils
 

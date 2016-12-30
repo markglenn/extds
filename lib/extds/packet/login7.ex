@@ -1,11 +1,13 @@
-defmodule ExTds.Packet.Login do
-  defstruct [:hostname, :username, :password]
+defmodule ExTds.Packet.Login7 do
+  # https://msdn.microsoft.com/en-us/library/dd304019.aspx
+
+  defstruct [:hostname, :username, :password, :database]
   use Bitwise
-  import ExTds.Utils, only: [to_ucs2: 1] 
+  alias ExTds.Utils
 
   def encrypt_password(password) do
     password
-    |> to_ucs2
+    |> Utils.to_ucs2
     |> :binary.bin_to_list
     |> Enum.map(fn b ->
       # Swap the top and bottom nibbles 
@@ -15,10 +17,9 @@ defmodule ExTds.Packet.Login do
       Bitwise.bxor(c, 0xA5)
     end)
     |> :binary.list_to_bin
-    |> to_string
   end
 
-  def to_packet(packet = %ExTds.Packet.Login{}) do
+  def to_packet(packet = %ExTds.Packet.Login7{}) do
     header = <<
       0x04, 0x00, 0x00, 0x74,         # TDS Version
       4096 :: little-size(4)-unit(8), # Packet Size
@@ -39,11 +40,11 @@ defmodule ExTds.Packet.Login do
       |> add_variable_length_string(packet.username)      # Username
       |> add_variable_length_binary(encrypt_password(packet.password))      # Password
       |> add_variable_length_string("")      # App name
-      |> add_variable_length_string("")      # Server name
+      |> add_variable_length_string(packet.hostname)      # Server name
       |> add_variable_length_string("")      # Unused
       |> add_variable_length_string("")      # Library name
       |> add_variable_length_string("")      # Language
-      |> add_variable_length_string("")      # Database name
+      |> add_variable_length_string(packet.database)      # Database name
       |> add_fixed_length_field(<<0x00 :: size(48)>>) # Client ID
       |> add_variable_length_string()        # SSPI
       |> add_variable_length_string()        # Attach DB File
@@ -53,7 +54,7 @@ defmodule ExTds.Packet.Login do
     <<size :: little-size(32)>> <> header <> body
   end
 
-  defp add_variable_length_string(state, s), do: add_variable_length_binary(state, to_ucs2(s))
+  defp add_variable_length_string(state, s), do: add_variable_length_binary(state, Utils.to_ucs2(s))
   defp add_variable_length_string({header, body, offset}) do
     {
       header <> <<0 :: little-size(16), 0 :: little-size(16)>>,

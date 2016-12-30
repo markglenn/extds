@@ -1,22 +1,22 @@
-defmodule ExTdsTest.ExTds.Packet.Login do
+defmodule ExTdsTest.ExTds.Packet.Login7Test do
   use ExUnit.Case, async: true
-  alias ExTds.Packet.Login
+  alias ExTds.Packet.Login7
 
   describe "encrypt_password" do
     test "encrypts single character password" do
-      assert <<0xA2, 0xA5>> == Login.encrypt_password("p") 
+      assert <<0xA2, 0xA5>> == Login7.encrypt_password("p") 
     end
 
     test "encrypts multiple character password" do
-      assert <<0xE0, 0xA5, 0xF1, 0xA5, 0x90, 0xA5, 0xE0, 0xA5>> == Login.encrypt_password("TEST")
+      assert <<0xE0, 0xA5, 0xF1, 0xA5, 0x90, 0xA5, 0xE0, 0xA5>> == Login7.encrypt_password("TEST")
     end
   end
 
   describe "to_packet" do
     test "header with username and password" do
-      login_packet = %Login{hostname: "server.example.com", username: "exampleuser", password: "password"}
+      login_packet = %Login7{hostname: "server.example.com", username: "exampleuser", password: "password"}
 
-      packet = Login.to_packet(login_packet)
+      packet = Login7.to_packet(login_packet)
 
       # Size
       <<size :: little-size(32), tail :: binary>> = packet
