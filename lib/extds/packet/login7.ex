@@ -3,6 +3,8 @@ defmodule ExTds.Packet.Login7 do
 
   defstruct [:hostname, :username, :password, :database]
 
+  alias __MODULE__
+
   use Bitwise
   alias ExTds.Utils
 
@@ -20,7 +22,7 @@ defmodule ExTds.Packet.Login7 do
     |> :binary.list_to_bin
   end
 
-  def to_packet(packet = %ExTds.Packet.Login7{}) do
+  def to_packet(packet = %Login7{}) do
     header = <<
       0x04, 0x00, 0x00, 0x74,         # TDS Version
       4096 :: little-size(4)-unit(8), # Packet Size
@@ -73,7 +75,6 @@ defmodule ExTds.Packet.Login7 do
       offset + len
     }
   end 
-
 
   defp add_fixed_length_field({header, body, offset}, field), do: {header <> field, body, offset}
 end

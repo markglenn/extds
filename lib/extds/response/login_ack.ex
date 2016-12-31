@@ -1,7 +1,7 @@
 defmodule ExTds.Response.LoginAck do
   @behaviour ExTds.Response.Parser
 
-  alias ExTds.Response.LoginAck
+  alias __MODULE__
 
   defstruct [:interface, :tds_version, :program_name, :major_version, :minor_version, :build_num_high, :build_num_low]
 

@@ -1,8 +1,7 @@
 defmodule ExTds.Response.Error do
   @behaviour ExTds.Response.Parser
 
-  alias ExTds.Response.Error
-  require IEx
+  alias __MODULE__
 
   defstruct [:error_number, :state, :class, :message, :server_name, :proc_name, :line_number]
 
