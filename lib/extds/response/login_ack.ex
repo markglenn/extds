@@ -1,4 +1,6 @@
 defmodule ExTds.Response.LoginAck do
+  @behaviour ExTds.Response.Parser
+
   alias ExTds.Response.LoginAck
 
   defstruct [:interface, :tds_version, :program_name, :major_version, :minor_version, :build_num_high, :build_num_low]
@@ -13,10 +15,10 @@ defmodule ExTds.Response.LoginAck do
     minor_version,
     build_num_high,
     build_num_low,
-    tail :: binary
+    _tail :: binary
     >> = response
 
-    {%LoginAck{
+    %LoginAck{
       interface: interface,
       tds_version: tds_version,
       program_name: ExTds.Utils.ucs2_to_utf(program_name),
@@ -24,6 +26,6 @@ defmodule ExTds.Response.LoginAck do
       minor_version: minor_version,
       build_num_high: build_num_high,
       build_num_low: build_num_low
-    },tail}
+    }
   end
 end

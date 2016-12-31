@@ -24,7 +24,7 @@ defmodule ExTds.Connection do
         connection = %ExTds.Connection{connection | sock: sock}
 
         packet =
-          %Login7{hostname: "localhost", username: "sa", password: "yourStrong(!)Password---", database: "tempdb"}
+          %Login7{hostname: "localhost", username: "sa", password: "yourStrong(!)Password", database: "tempdb"}
           |> Login7.to_packet
           |> encode_packet(0x10)
 

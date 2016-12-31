@@ -1,4 +1,6 @@
 defmodule ExTds.Response.Error do
+  @behaviour ExTds.Response.Parser
+
   alias ExTds.Response.Error
   require IEx
 
