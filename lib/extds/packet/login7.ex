@@ -2,6 +2,7 @@ defmodule ExTds.Packet.Login7 do
   # https://msdn.microsoft.com/en-us/library/dd304019.aspx
 
   defstruct [:hostname, :username, :password, :database]
+
   use Bitwise
   alias ExTds.Utils
 
