@@ -15,6 +15,8 @@ defmodule ExTds.Type do
   def parse(<<0x7A, tail :: binary>>), do: {%{type: :decimal,   sqltype: :smallmoney},    tail}
   def parse(<<0x7F, tail :: binary>>), do: {%{type: :integer,   sqltype: :bigint},        tail}
 
+  def parse(<<0x24, _size, tail :: binary>>), do: {%{type: :unique_identifier, sqltype: :uuid}, tail}
+
   def parse(<<0x26, size, tail :: binary>>) do
     sqltype = case size do
       1 -> :tinyint
@@ -32,6 +34,25 @@ defmodule ExTds.Type do
   end
 
   def parse(<<0x68, _size, tail :: binary>>), do: {%{type: :boolean, sqltype: :bitntype}, tail}
+  def parse(<<0x6A, size, precision, scale, tail :: binary>>) do
+    {
+      %{type: :decimal, precision: precision, scale: scale, sqltype: :decimal},
+      tail
+    }
+  end
+
+  def parse(<<0x6C, size, precision, scale, tail :: binary>>) do
+    {
+      %{type: :decimal, precision: precision, scale: scale, sqltype: :numeric},
+      tail
+    }
+  end
+
+  def parse(<<0x6D, 4, tail :: binary>>), do: {%{type: :float,  sqltype: :float}, tail}
+  def parse(<<0x6D, 8, tail :: binary>>), do: {%{type: :double, sqltype: :double}, tail}
+
+  def parse(<<0x6E, 4, tail :: binary>>), do: {%{type: :money, sqltype: :smallmoney}, tail}
+  def parse(<<0x6E, 8, tail :: binary>>), do: {%{type: :money, sqltype: :money}, tail}
 
   def parse(<<0xAF, type_size :: little-size(16), collation :: binary-size(5), tail :: binary>>) do
     {
