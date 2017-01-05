@@ -2,7 +2,7 @@ defmodule ExTds.Type do
   alias __MODULE__
 
   # Fixed length types
-  def parse(<<0x1F, tail :: binary>>), do: {%{type: :null,      sqltype: :null},          tail}
+  def parse(<<0x1F, tail :: binary>>), do: {%{type: :nil,       sqltype: :null},          tail}
   def parse(<<0x30, tail :: binary>>), do: {%{type: :integer,   sqltype: :tinyint},       tail}
   def parse(<<0x32, tail :: binary>>), do: {%{type: :boolean,   sqltype: :bit},           tail}
   def parse(<<0x34, tail :: binary>>), do: {%{type: :integer,   sqltype: :smallint},      tail}

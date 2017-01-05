@@ -23,6 +23,17 @@ defmodule ExTds.Connection do
       {:ok, sock} ->
         connection = %ExTds.Connection{connection | sock: sock}
 
+        # A suitable :buffer is only set if :recbuf is included in
+        # :socket_options.
+        {:ok, [sndbuf: sndbuf, recbuf: recbuf, buffer: buffer]} =
+          :inet.getopts(sock, [:sndbuf, :recbuf, :buffer])
+
+        buffer = buffer
+        |> max(sndbuf)
+        |> max(recbuf)
+
+        :ok = :inet.setopts(sock, buffer: buffer)
+
         IO.puts "Successfully connected to SQL Server"
 
         %Login7{hostname: "localhost", username: "sa", password: "yourStrong(!)Password", database: "tempdb"}
@@ -35,6 +46,7 @@ defmodule ExTds.Connection do
         |> send_msg(0x01, sock)
         |> IO.inspect
 
+        :gen_tcp.close(sock)
         #connection
       {:error, error} ->
         {:error, error}
@@ -50,8 +62,7 @@ defmodule ExTds.Connection do
 
   defp receive_response(sock, body \\ <<>>) do
     case :gen_tcp.recv(sock, 0, 1000) do
-      {:ok, msg} ->
-        <<0x04, done, _ :: binary-size(6), tail :: binary>> = msg
+      {:ok, <<0x04, done, _ :: binary-size(6), tail :: binary>> = msg} ->
         IO.puts "Received packet: "
         IO.inspect msg
 
@@ -62,6 +73,11 @@ defmodule ExTds.Connection do
           0 ->
             receive_response(sock, body <> tail)
         end
+      {:ok, packet} ->
+        IO.puts "Unknown packet:"
+        <<_ :: binary-size(4), m :: binary-size(11)-unit(16), _tail :: binary>> = packet
+        IO.puts(ExTds.Utils.ucs2_to_utf(m))
+        IO.inspect packet
 
       {:error, :closed} ->
         IO.inspect(:closed)
@@ -69,14 +85,14 @@ defmodule ExTds.Connection do
     end
   end
 
-  defp handle_response(<<token_type, _length :: little-size(16), response :: binary>>) do
+  defp handle_response(<<token_type, length :: little-size(16), response :: binary>>) do
     case token_type do
       0xAA ->
         ExTds.Response.Error.parse(response)
       0xAD ->
         ExTds.Response.LoginAck.parse(response)
       0x81 ->
-        ExTds.Response.ColumnMetadata.parse(response)
+        ExTds.Response.ColumnMetadata.parse(response, length)
     end
   end
 
