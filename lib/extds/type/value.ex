@@ -1,7 +1,11 @@
 defmodule ExTds.Type.Value do
   @year_1900 :calendar.date_to_gregorian_days({1900,1,1})
 
-  def parse(tail, %{sqltype: :char}), do: parse(tail, %{sqltype: :nvarchar})
+  def parse(tail, %{sqltype: :bigchar}) do
+    <<size :: little-size(16), value :: binary-size(size), tail :: binary>> = tail
+
+    {ExTds.Utils.ucs2_to_utf(value), tail}
+  end
   def parse(tail, %{sqltype: :nvarchar}) do
     <<size :: little-size(16), value :: binary-size(size), tail :: binary>> = tail
 
