@@ -24,7 +24,7 @@ defmodule ExTds.Response.ColumnMetadata do
   end
 
   defp parse_column(<<_usertype :: little-size(4)-unit(8), _flags :: size(16), tail :: binary>>) do
-    {type, tail} = ExTds.Type.parse(tail)
+    {type, tail} = ExTds.Type.Info.parse(tail)
     <<name_size :: size(8), name :: binary-size(name_size)-unit(16), tail :: binary>> = tail
 
     {%{name: ExTds.Utils.ucs2_to_utf(name), type: type}, tail}
@@ -50,7 +50,7 @@ defmodule ExTds.Response.ColumnMetadata do
   end
 
   defp parse_columns(<<tail :: binary>>, [column | columns], [_ | null_columns], record_columns) do
-    {value, tail} = ExTds.Type.parse_value(tail, column.type)
+    {value, tail} = ExTds.Type.Value.parse(tail, column.type)
 
     parse_columns(tail, columns, null_columns, [value | record_columns])
   end
