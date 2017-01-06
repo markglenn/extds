@@ -1,36 +1,29 @@
 defmodule ExTds.Type.Value do
   @year_1900 :calendar.date_to_gregorian_days({1900,1,1})
 
-  def parse(tail, %{sqltype: :bigchar}) do
+  def parse(tail, %{type: :string}) do
     <<size :: little-size(16), value :: binary-size(size), tail :: binary>> = tail
 
     {ExTds.Utils.ucs2_to_utf(value), tail}
   end
-  def parse(tail, %{sqltype: :nvarchar}) do
-    <<size :: little-size(16), value :: binary-size(size), tail :: binary>> = tail
 
-    {ExTds.Utils.ucs2_to_utf(value), tail}
-  end
+  # Variable types with 0 length are nil
+  def parse(<<0x00, tail :: binary>>, %{data_type: :variable}), do: {nil, tail}
 
   # Booleans
-  def parse(<<bit, tail :: binary>>, %{sqltype: :bit, data_type: :fixed}), do: {bit == 0x01, tail}
+  def parse(<<bit, tail :: binary>>, %{sqltype: :bit, data_type: :fixed}), do: {bit != 0x00, tail}
   def parse(<<0x01, bit, tail :: binary>>, %{sqltype: :bit, data_type: :variable}), do: {bit != 0x00, tail}
-  def parse(<<0x00, tail :: binary>>, %{sqltype: :bit, data_type: :variable}), do: {nil, tail}
   
   # Integers
-  def parse(<<value :: little-signed-size(32), tail :: binary>>, %{sqltype: :int, data_type: :fixed}), do: {value, tail}
-  def parse(<<value, tail :: binary>>, %{sqltype: :tinyint, data_type: :fixed}), do: {value, tail}
-
-
+  def parse(<<tail :: binary>>, %{type: :integer, data_type: :fixed, size: size}) do
+    <<value :: little-signed-size(size)-unit(8), tail :: binary>> = tail
+    {value, tail}
+  end
   def parse(<<size, value :: little-signed-size(size)-unit(8), tail :: binary>>, %{type: :integer, data_type: :variable}), do: {value, tail}
 
   def parse(<<days :: little-signed-32, seconds_300 :: little-unsigned-32, tail :: binary>>, %{sqltype: :datetime}) do
-    year_1900 = 
-      {1900,1,1}
-      |> :calendar.date_to_gregorian_days
-
     date =
-      year_1900 + days
+      @year_1900 + days
       |> :calendar.gregorian_days_to_date
 
     seconds = div(seconds_300, 300)
