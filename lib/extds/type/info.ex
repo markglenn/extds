@@ -13,7 +13,7 @@ defmodule ExTds.Type.Info do
   def parse(<<0x7A, tail :: binary>>), do: {fixed_type(:decimal, :smallmoney), tail}
   def parse(<<0x7F, tail :: binary>>), do: {fixed_type(:integer, :bigint), tail}
 
-  def parse(<<0x24, _size, tail :: binary>>), do: {%{type: :unique_identifier, sqltype: :uuid}, tail}
+  def parse(<<0x24, size, tail :: binary>>), do: {variable_type(:unique_identifier, :guid, size), tail}
 
   def parse(<<0x26, 1, tail :: binary>>), do: {variable_type(:integer, :tinyint, 1), tail}
   def parse(<<0x26, 2, tail :: binary>>), do: {variable_type(:integer, :smallint, 2), tail}
@@ -22,16 +22,39 @@ defmodule ExTds.Type.Info do
 
   def parse(<<0x68, size, tail :: binary>>), do: {variable_type(:boolean, :bit, size), tail}
 
-  def parse(<<0x6A, _size, precision, scale, tail :: binary>>) do
+  def parse(<<0x6F, 4, tail :: binary>>), do: {variable_type(:datetime, :smalldatetime, 4), tail}
+  def parse(<<0x6F, 8, tail :: binary>>), do: {variable_type(:datetime, :datetime, 8), tail}
+  def parse(<<0x28, size, tail :: binary>>), do: {variable_type(:date, :date, size), tail}
+  def parse(<<0x29, size, tail :: binary>>), do: {variable_type(:time, :time, size), tail}
+  def parse(<<0x2A, size, tail :: binary>>), do: {variable_type(:datetime, :datetime2, size), tail}
+  def parse(<<0x2B, size, tail :: binary>>), do: {variable_type(:datetimeoffset, :datetimeoffset, size), tail}
+
+  def parse(<<0x37, size, tail :: binary>>), do: {variable_type(:decimal, :decimal, size), tail}
+  def parse(<<0x3F, size, tail :: binary>>), do: {variable_type(:decimal, :numeric, size), tail}
+  def parse(<<0x6A, size, precision, scale, tail :: binary>>) do
     {
-      %{type: :decimal, precision: precision, scale: scale, sqltype: :decimal},
+      %{
+        type: :decimal,
+        precision: precision,
+        scale: scale,
+        sqltype: :decimal,
+        size: size,
+        data_type: :variable
+      },
       tail
     }
   end
 
-  def parse(<<0x6C, _size, precision, scale, tail :: binary>>) do
+  def parse(<<0x6C, size, precision, scale, tail :: binary>>) do
     {
-      %{type: :decimal, precision: precision, scale: scale, sqltype: :numeric},
+      %{
+        type: :decimal,
+        precision: precision,
+        scale: scale,
+        sqltype: :numeric,
+        size: size,
+        data_type: :variable
+      },
       tail
     }
   end
@@ -48,6 +71,18 @@ defmodule ExTds.Type.Info do
   def parse(<<0xEF, size :: little-size(16), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :nchar, size, collation), tail}
   def parse(<<0xAF, size :: little-size(16), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :bigchar, size, collation), tail}
   def parse(<<0xA7, size :: little-size(16), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :bigvarchar, size, collation), tail}
+
+  def parse(<<0x2D, size, tail :: binary>>), do: {variable_type(:binary, :binary, size), tail}
+  def parse(<<0x25, size, tail :: binary>>), do: {variable_type(:binary, :varbinary, size), tail}
+  def parse(<<0xA5, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :varbinary, size), tail}
+  def parse(<<0xAD, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :binary, size), tail}
+
+  def parse(<<0xF1, size :: little-size(32), tail :: binary>>), do: {variable_type(:string, :xml, size), tail}
+  def parse(<<0xF0, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :udt, size), tail}
+  def parse(<<0x23, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :text, size, collation), tail}
+  def parse(<<0x63, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :ntext, size, collation), tail}
+  def parse(<<0x22, size :: little-size(32), tail :: binary>>), do: {variable_type(:binary, :image, size), tail}
+  def parse(<<0x62, size :: little-size(32), tail :: binary>>), do: {variable_type(:binary, :variant, size), tail}
 
   defp fixed_type(type, sqltype) do
     size = cond do

@@ -1,4 +1,6 @@
 defmodule ExTds.Type.Value do
+  # https://msdn.microsoft.com/en-us/library/ee780892.aspx
+
   @year_1900 :calendar.date_to_gregorian_days({1900,1,1})
 
   def parse(tail, %{type: :string}) do
