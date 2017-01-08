@@ -28,9 +28,10 @@ defmodule ExTds.Connection do
         {:ok, [sndbuf: sndbuf, recbuf: recbuf, buffer: buffer]} =
           :inet.getopts(sock, [:sndbuf, :recbuf, :buffer])
 
-        buffer = buffer
-        |> max(sndbuf)
-        |> max(recbuf)
+        buffer =
+          buffer
+          |> max(sndbuf)
+          |> max(recbuf)
 
         :ok = :inet.setopts(sock, buffer: buffer)
 
@@ -41,7 +42,7 @@ defmodule ExTds.Connection do
         |> send_msg(0x10, sock)
         |> IO.inspect
 
-        %SqlBatch{query: "SELECT * FROM sys.Tables"}
+        %SqlBatch{query: "SELECT * FROM sys.Columns"}
         |> SqlBatch.to_packet
         |> send_msg(0x01, sock)
         |> IO.inspect
@@ -60,24 +61,31 @@ defmodule ExTds.Connection do
     receive_response(sock)
   end
 
-  defp receive_response(sock, body \\ <<>>) do
-    case :gen_tcp.recv(sock, 0, 1000) do
-      {:ok, <<0x04, done, _ :: binary-size(6), tail :: binary>> = msg} ->
-        IO.puts "Received packet: "
-        IO.inspect msg
+  defp receive_response(sock, packets \\ []) do
+    case receive_packet(sock) do
+      {:ok, <<0x04, 0x01, _ :: binary-size(6), tail :: binary>>} ->
+        [tail | packets ]
+        |> Enum.reverse
+        |> Enum.join(<<>>)
+        |> handle_response
+      {:ok, <<0x04, 0x00, _ :: binary-size(6), tail :: binary>>} ->
+        receive_response(sock, [tail | packets])
+    end
+  end
 
-        # Check if this packet is the last in a response
-        case done do
-          1 ->
-            handle_response(body <> tail)
-          0 ->
-            receive_response(sock, body <> tail)
+  defp receive_packet(sock, body \\ <<>>) do
+    case :gen_tcp.recv(sock, 0, 1000) do
+
+      {:ok, <<msg :: binary>>} ->
+        case body <> msg do
+          <<_ :: binary-size(2), size :: size(16), _ :: binary-size(4), tail :: binary>> = msg ->
+            size = size - 8
+            case tail do
+              <<_ :: binary-size(size)>> -> {:ok, msg}
+              _ -> receive_packet(sock, msg)
+            end
+          <<msg :: binary>> -> receive_packet(sock, msg)
         end
-      {:ok, packet} ->
-        IO.puts "Unknown packet:"
-        <<_ :: binary-size(4), m :: binary-size(11)-unit(16), _tail :: binary>> = packet
-        IO.puts(ExTds.Utils.ucs2_to_utf(m))
-        IO.inspect packet
 
       {:error, :closed} ->
         IO.inspect(:closed)
@@ -97,16 +105,7 @@ defmodule ExTds.Connection do
   end
 
   defp encode_packet(packet, type) do
-    header = <<
-      type,
-      1, # Status
-      byte_size(packet) + 8 :: size(16), # Packet length
-      0 :: size(16),
-      1, # ID
-      0
-    >>
-
+    header = <<type, 1, byte_size(packet) + 8 :: size(16), 0 :: size(16), 1, 0>>
     header <> packet
   end
-
 end
