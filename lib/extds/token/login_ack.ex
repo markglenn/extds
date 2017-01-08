@@ -1,4 +1,4 @@
-defmodule ExTds.Response.LoginAck do
+defmodule ExTds.Token.LoginAck do
   @behaviour ExTds.Response.Parser
 
   alias __MODULE__
@@ -15,17 +15,20 @@ defmodule ExTds.Response.LoginAck do
     minor_version,
     build_num_high,
     build_num_low,
-    _tail :: binary
+    tail :: binary
     >> = response
 
-    %LoginAck{
-      interface: interface,
-      tds_version: tds_version,
-      program_name: ExTds.Utils.ucs2_to_utf(program_name),
-      major_version: major_version,
-      minor_version: minor_version,
-      build_num_high: build_num_high,
-      build_num_low: build_num_low
+    {
+      %LoginAck{
+        interface: interface,
+        tds_version: tds_version,
+        program_name: ExTds.Utils.ucs2_to_utf(program_name),
+        major_version: major_version,
+        minor_version: minor_version,
+        build_num_high: build_num_high,
+        build_num_low: build_num_low
+      },
+      tail
     }
   end
 end

@@ -1,4 +1,4 @@
-defmodule ExTds.Response.Error do
+defmodule ExTds.Token.Error do
   @behaviour ExTds.Response.Parser
 
   alias __MODULE__
@@ -17,17 +17,20 @@ defmodule ExTds.Response.Error do
       pn_size,
       proc_name :: binary-size(pn_size)-unit(16),
       line_number :: little-size(32),
-      _tail :: binary
+      tail :: binary
     >> = response
 
-    %Error{
-      error_number: error_number,
-      state: state,
-      class: class,
-      message: ExTds.Utils.ucs2_to_utf(message),
-      server_name: ExTds.Utils.ucs2_to_utf(server_name),
-      proc_name: ExTds.Utils.ucs2_to_utf(proc_name),
-      line_number: line_number
+    {
+      %Error{
+        error_number: error_number,
+        state: state,
+        class: class,
+        message: ExTds.Utils.ucs2_to_utf(message),
+        server_name: ExTds.Utils.ucs2_to_utf(server_name),
+        proc_name: ExTds.Utils.ucs2_to_utf(proc_name),
+        line_number: line_number
+      },
+      tail
     }
   end
 end

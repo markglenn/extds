@@ -42,7 +42,7 @@ defmodule ExTds.Connection do
         |> send_msg(0x10, sock)
         |> IO.inspect
 
-        %SqlBatch{query: "SELECT * FROM sys.Columns"}
+        %SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns"}
         |> SqlBatch.to_packet
         |> send_msg(0x01, sock)
         |> IO.inspect
@@ -99,18 +99,20 @@ defmodule ExTds.Connection do
     end
   end
 
-  defp handle_response(<<token_type, length :: little-size(16), response :: binary>> = msg) do
+  defp handle_response(<<token_type, _length :: little-size(16), response :: binary>> = msg) do
     IO.puts "Received packet:"
     IO.inspect(msg)
 
-    case token_type do
+    {response, tail} = case token_type do
       0xAA ->
-        ExTds.Response.Error.parse(response)
+        ExTds.Token.Error.parse(response)
       0xAD ->
-        ExTds.Response.LoginAck.parse(response)
+        ExTds.Token.LoginAck.parse(response)
       0x81 ->
-        ExTds.Response.ColumnMetadata.parse(response, length)
+        ExTds.Token.ColumnMetadata.parse(msg)
     end
+
+    response
   end
 
   defp encode_packet(packet, type) do
