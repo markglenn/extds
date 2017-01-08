@@ -58,6 +58,7 @@ defmodule ExTds.Connection do
     IO.puts "Sending packet:"
     IO.inspect(encode_packet(packet, type))
     :ok = :gen_tcp.send(sock, encode_packet(packet, type))
+
     receive_response(sock)
   end
 
@@ -78,12 +79,17 @@ defmodule ExTds.Connection do
 
       {:ok, <<msg :: binary>>} ->
         case body <> msg do
+          # Packet contains the header at least
           <<_ :: binary-size(2), size :: size(16), _ :: binary-size(4), tail :: binary>> = msg ->
             size = size - 8
+
+            # Make sure we received the full packet
             case tail do
               <<_ :: binary-size(size)>> -> {:ok, msg}
               _ -> receive_packet(sock, msg)
             end
+
+          # Packet is not large enough to even contain the header
           <<msg :: binary>> -> receive_packet(sock, msg)
         end
 
@@ -93,7 +99,10 @@ defmodule ExTds.Connection do
     end
   end
 
-  defp handle_response(<<token_type, length :: little-size(16), response :: binary>>) do
+  defp handle_response(<<token_type, length :: little-size(16), response :: binary>> = msg) do
+    IO.puts "Received packet:"
+    IO.inspect(msg)
+
     case token_type do
       0xAA ->
         ExTds.Response.Error.parse(response)
