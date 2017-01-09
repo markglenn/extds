@@ -1,15 +1,11 @@
 defmodule ExTds.Utils do
+
+  def to_ucs2(nil), do: <<>>
   def to_ucs2(s) do
-    s
-    |> to_char_list
-    |> Enum.map_join(&(<<&1::little-size(16)>>))
+    :unicode.characters_to_binary(s, :utf8, {:utf16, :little})
   end
 
   def ucs2_to_utf(s) do
-    s
-    |> to_char_list
-    |> Enum.take_every(2)
-    |> Enum.reject(&(&1 == 0))
-    |> to_string
+    :unicode.characters_to_binary(s, {:utf16, :little})
   end
 end
