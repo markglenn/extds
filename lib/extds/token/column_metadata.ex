@@ -67,7 +67,7 @@ defmodule ExTds.Token.ColumnMetadata do
   end
 
   defp do_parse_values(<<tail :: binary>>, [column | columns], [_ | null_columns], record_columns) do
-    {value, tail} = ExTds.Type.Value.parse(tail, column.type)
+    {value, tail} = ExTds.Type.Value.parse(column.type, tail)
 
     do_parse_values(tail, columns, null_columns, [value | record_columns])
   end
