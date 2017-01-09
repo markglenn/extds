@@ -60,4 +60,22 @@ defmodule ExTdsTest.ExTds.Type.ValueTest do
     end
   end
 
+  describe "parse booleans" do
+    test "parse bit type" do
+      assert Value.parse(%{type: :boolean, sqltype: :bit, size: 1, data_type: :fixed}, <<0x01, 0x00>>) ==
+        {true, <<0x00>>}
+      assert Value.parse(%{type: :boolean, sqltype: :bit, size: 1, data_type: :fixed}, <<0x00, 0x00>>) ==
+        {false, <<0x00>>}
+    end
+
+    test "parse bit variable type" do
+      assert Value.parse(%{type: :boolean, sqltype: :bit, size: 1, data_type: :variable}, <<0x01, 0x01, 0x00>>) ==
+        {true, <<0x00>>}
+      assert Value.parse(%{type: :boolean, sqltype: :bit, size: 1, data_type: :variable}, <<0x01, 0x00, 0x00>>) ==
+        {false, <<0x00>>}
+      assert Value.parse(%{type: :boolean, sqltype: :bit, size: 1, data_type: :variable}, <<0x00, 0x00>>) ==
+        {nil, <<0x00>>}
+    end
+
+  end
 end
