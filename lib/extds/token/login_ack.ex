@@ -1,5 +1,5 @@
 defmodule ExTds.Token.LoginAck do
-  @behaviour ExTds.Response.Parser
+  @behaviour ExTds.Token.Parser
 
   alias __MODULE__
 
