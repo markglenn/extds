@@ -3,6 +3,8 @@ defmodule ExTds.Connection do
 
   alias ExTds.Packet.Login7
   alias ExTds.Packet.SqlBatch
+  alias ExTds.Packet.BeginTransaction
+  alias ExTds.Packet.RollbackTransaction
 
   defstruct [
     sock: nil
@@ -42,9 +44,18 @@ defmodule ExTds.Connection do
         |> send_msg(0x10, sock)
         |> IO.inspect
 
-        %SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns"}
+        %{transaction_id: transaction_id} =
+          BeginTransaction.to_packet
+          |> send_msg(0x0E, sock)
+
+        %SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns", transaction_id: transaction_id}
         |> SqlBatch.to_packet
         |> send_msg(0x01, sock)
+        |> IO.inspect
+
+        transaction_id
+        |> RollbackTransaction.to_packet
+        |> send_msg(0x0E, sock)
         |> IO.inspect
 
         :gen_tcp.close(sock)
@@ -110,6 +121,8 @@ defmodule ExTds.Connection do
         ExTds.Token.LoginAck.parse(response)
       0x81 ->
         ExTds.Token.ColumnMetadata.parse(msg)
+      0xE3 ->
+        ExTds.Token.EnvChange.parse(msg)
     end
 
     response
