@@ -5,10 +5,9 @@ defmodule ExTds.Connection do
   alias ExTds.Packet.SqlBatch
   alias ExTds.Packet.BeginTransaction
   alias ExTds.Packet.RollbackTransaction
+  alias ExTds.Packet.CommitTransaction
 
-  defstruct [
-    sock: nil
-  ]
+  defstruct [:sock, :trans]
 
   def connect do
     connection = %ExTds.Connection{}
@@ -41,21 +40,22 @@ defmodule ExTds.Connection do
 
         %Login7{hostname: "localhost", username: "sa", password: "yourStrong(!)Password", database: "tempdb"}
         |> Login7.to_packet
-        |> send_msg(0x10, sock)
+        |> send_msg(0x10, connection)
         |> IO.inspect
 
-        %{transaction_id: transaction_id} =
-          BeginTransaction.to_packet
-          |> send_msg(0x0E, sock)
+        connection =
+          connection
+          |> BeginTransaction.to_packet
+          |> send_msg(0x0E, connection)
 
-        %SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns", transaction_id: transaction_id}
-        |> SqlBatch.to_packet
-        |> send_msg(0x01, sock)
+        connection
+        |> SqlBatch.to_packet(%SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns"})
+        |> send_msg(0x01, connection)
         |> IO.inspect
 
-        transaction_id
-        |> RollbackTransaction.to_packet
-        |> send_msg(0x0E, sock)
+        connection
+        |> CommitTransaction.to_packet
+        |> send_msg(0x0E, connection)
         |> IO.inspect
 
         :gen_tcp.close(sock)
@@ -65,23 +65,23 @@ defmodule ExTds.Connection do
     end
   end
 
-  defp send_msg(packet, type, sock) do
+  defp send_msg(packet, type, connection) do
     IO.puts "Sending packet:"
     IO.inspect(encode_packet(packet, type))
-    :ok = :gen_tcp.send(sock, encode_packet(packet, type))
+    :ok = :gen_tcp.send(connection.sock, encode_packet(packet, type))
 
-    receive_response(sock)
+    receive_response(connection)
   end
 
-  defp receive_response(sock, packets \\ []) do
-    case receive_packet(sock) do
+  defp receive_response(connection, packets \\ []) do
+    case receive_packet(connection.sock) do
       {:ok, <<0x04, 0x01, _ :: binary-size(6), tail :: binary>>} ->
         [tail | packets ]
         |> Enum.reverse
         |> Enum.join(<<>>)
-        |> handle_response
+        |> handle_response(connection)
       {:ok, <<0x04, 0x00, _ :: binary-size(6), tail :: binary>>} ->
-        receive_response(sock, [tail | packets])
+        receive_response(connection, [tail | packets])
     end
   end
 
@@ -110,22 +110,20 @@ defmodule ExTds.Connection do
     end
   end
 
-  defp handle_response(<<token_type, _length :: little-size(16), response :: binary>> = msg) do
+  defp handle_response(<<token_type, _length :: little-size(16), response :: binary>> = msg, connection) do
     IO.puts "Received packet:"
     IO.inspect(msg)
 
-    {response, tail} = case token_type do
+    case token_type do
       0xAA ->
-        ExTds.Token.Error.parse(response)
+        ExTds.Token.Error.parse(connection, response)
       0xAD ->
-        ExTds.Token.LoginAck.parse(response)
+        ExTds.Token.LoginAck.parse(connection, response)
       0x81 ->
-        ExTds.Token.ColumnMetadata.parse(msg)
+        ExTds.Token.ColumnMetadata.parse(connection, msg)
       0xE3 ->
-        ExTds.Token.EnvChange.parse(msg)
+        ExTds.Token.EnvChange.parse(connection, msg)
     end
-
-    response
   end
 
   defp encode_packet(packet, type) do

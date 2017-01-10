@@ -1,7 +1,7 @@
 defmodule ExTds.Token.ColumnMetadata do
   @behaviour ExTds.Token.Parser
 
-  def parse(<<0x81, _ :: binary>> = token) do
+  def parse(connection, <<0x81, _ :: binary>> = token) do
     do_parse(token, [])
   end
 

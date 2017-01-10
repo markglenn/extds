@@ -1,9 +1,10 @@
 defmodule ExTds.Packet.SqlBatch do
-  defstruct [:query, :transaction_id]
+  defstruct [:query]
 
   alias __MODULE__
+  alias ExTds.Connection
 
-  def to_packet(%SqlBatch{transaction_id: transaction_id, query: query}) do
+  def to_packet(%Connection{trans: transaction_id}, %SqlBatch{query: query}) do
     header = <<
       0x16 :: little-size(32), # Total header length
 
