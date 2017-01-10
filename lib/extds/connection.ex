@@ -39,22 +39,22 @@ defmodule ExTds.Connection do
         IO.puts "Successfully connected to SQL Server"
 
         %Login7{hostname: "localhost", username: "sa", password: "yourStrong(!)Password", database: "tempdb"}
-        |> Login7.to_packet
+        |> Login7.packet
         |> send_msg(0x10, connection)
         |> IO.inspect
 
         connection =
           connection
-          |> BeginTransaction.to_packet
+          |> BeginTransaction.packet
           |> send_msg(0x0E, connection)
 
         connection
-        |> SqlBatch.to_packet(%SqlBatch{query: "SELECT * FROM sys.tables; SELECT * FROM sys.Columns"})
+        |> SqlBatch.packet("SELECT * FROM sys.tables; SELECT * FROM sys.Columns")
         |> send_msg(0x01, connection)
         |> IO.inspect
 
         connection
-        |> CommitTransaction.to_packet
+        |> RollbackTransaction.packet
         |> send_msg(0x0E, connection)
         |> IO.inspect
 

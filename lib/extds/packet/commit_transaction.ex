@@ -1,7 +1,7 @@
 defmodule ExTds.Packet.CommitTransaction do
   alias ExTds.Connection
 
-  def to_packet(%Connection{trans: transaction_id}) do
+  def packet(%Connection{trans: transaction_id}) do
     header = <<
       0x12 :: little-size(32), # Transaction header size
       0x02 :: little-size(16), # Transaction header type

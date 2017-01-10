@@ -16,7 +16,7 @@ defmodule ExTdsTest.ExTds.Packet.Login7Test do
     test "header with username and password" do
       login_packet = %Login7{hostname: "server.example.com", username: "exampleuser", password: "password"}
 
-      packet = Login7.to_packet(login_packet)
+      packet = Login7.packet(login_packet)
 
       # Size
       <<size :: little-size(32), tail :: binary>> = packet
