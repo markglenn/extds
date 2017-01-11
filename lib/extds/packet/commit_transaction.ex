@@ -1,6 +1,7 @@
 defmodule ExTds.Packet.CommitTransaction do
   alias ExTds.Connection
 
+  def packet(%Connection{trans: nil}), do: {:error, "Tried to commit a transaction with no open transaction"}
   def packet(%Connection{trans: transaction_id}) do
     header = <<
       0x12 :: little-size(32), # Transaction header size
