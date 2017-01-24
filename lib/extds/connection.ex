@@ -55,34 +55,25 @@ defmodule ExTds.Connection do
   end
 
   def begin_transaction(conn = %Connection{}) do
-    conn =
-      conn
-      |> BeginTransaction.packet
-      |> send_msg(0x0E, conn)
-
-    {:ok, conn}
+    conn
+    |> BeginTransaction.packet
+    |> send_msg(0x0E, conn)
   end
 
   def rollback_transaction(conn = %Connection{}) do
-    conn =
-      conn
-      |> RollbackTransaction.packet
-      |> send_msg(0x0E, conn)
-
-    {:ok, conn}
+    conn
+    |> RollbackTransaction.packet
+    |> send_msg(0x0E, conn)
   end
 
   def commit_transaction(conn = %Connection{}) do
-    conn =
-      conn
-      |> CommitTransaction.packet
-      |> send_msg(0x0E, conn)
-
-    {:ok, conn}
+    conn
+    |> CommitTransaction.packet
+    |> send_msg(0x0E, conn)
   end
 
   def execute_raw(conn = %Connection{}, sql) do
-    results =
+    {:ok, results} =
       conn
       |> SqlBatch.packet(sql)
       |> send_msg(0x01, conn)
@@ -136,16 +127,18 @@ defmodule ExTds.Connection do
   defp handle_response(<<token_type, _length :: little-size(16), response :: binary>> = msg, connection) do
     case token_type do
       0xAA ->
-        ExTds.Token.Error.parse(connection, response)
+        {:ok, ExTds.Token.Error.parse(connection, response)}
       0xAD ->
-        ExTds.Token.LoginAck.parse(connection, response)
+        {:ok, ExTds.Token.LoginAck.parse(connection, response)}
       0x81 ->
-        ExTds.Token.ColumnMetadata.parse(connection, msg)
+        {:ok, ExTds.Token.ColumnMetadata.parse(connection, msg)}
       0xE3 ->
-        ExTds.Token.EnvChange.parse(connection, msg)
+        {:ok, ExTds.Token.EnvChange.parse(connection, msg)}
       _ ->
         IO.puts "Received unknown packet:"
         IO.inspect(msg)
+
+        {:error, "Received unknown packet type: #{token_type}"}
     end
   end
 

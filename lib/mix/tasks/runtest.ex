@@ -5,7 +5,7 @@ defmodule Mix.Tasks.ExTds.Runtest do
   def run(_) do
     with {:ok, conn} <- Connection.connect,
          {:ok, conn} <- Connection.begin_transaction(conn),
-         {:ok, results, conn} <- Connection.execute_raw(conn, "SELECT * FROM sys.tables"),
+         {:ok, results, conn} <- Connection.execute_raw(conn, "SELECT * FROM sys.tables; select * from sys.column1s"),
          IO.inspect(results),
          {:ok, conn} <- Connection.rollback_transaction(conn),
      do: Connection.disconnect(conn)
