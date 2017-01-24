@@ -74,13 +74,13 @@ defmodule ExTds.Type.Info do
 
   def parse(<<0x2D, size, tail :: binary>>), do: {variable_type(:binary, :binary, size), tail}
   def parse(<<0x25, size, tail :: binary>>), do: {variable_type(:binary, :varbinary, size), tail}
-  def parse(<<0xA5, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :varbinary, size), tail}
-  def parse(<<0xAD, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :binary, size), tail}
+  def parse(<<0xA5, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :bigvarbinary, size), tail}
+  def parse(<<0xAD, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :bigbinary, size), tail}
 
-  def parse(<<0xF1, size :: little-size(32), tail :: binary>>), do: {variable_type(:string, :xml, size), tail}
+  def parse(<<0xF1, size :: little-size(32), tail :: binary>>), do: {variable_type(:longstring, :xml, size), tail}
   def parse(<<0xF0, size :: little-size(16), tail :: binary>>), do: {variable_type(:binary, :udt, size), tail}
-  def parse(<<0x23, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :text, size, collation), tail}
-  def parse(<<0x63, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:string, :ntext, size, collation), tail}
+  def parse(<<0x23, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:longstring, :text, size, collation), tail}
+  def parse(<<0x63, size :: little-size(32), collation :: binary-size(5), tail :: binary>>), do: {variable_type(:longstring, :ntext, size, collation), tail}
   def parse(<<0x22, size :: little-size(32), tail :: binary>>), do: {variable_type(:binary, :image, size), tail}
   def parse(<<0x62, size :: little-size(32), tail :: binary>>), do: {variable_type(:binary, :variant, size), tail}
 

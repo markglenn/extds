@@ -175,17 +175,17 @@ defmodule ExTdsTest.ExTds.Type.InfoTest do
     end
 
     test "parse variable bigvarbinary type" do
-      assert {%{type: :binary, sqltype: :varbinary, size: 8, data_type: :variable}, <<0x00>>} ==
+      assert {%{type: :binary, sqltype: :bigvarbinary, size: 8, data_type: :variable}, <<0x00>>} ==
         Info.parse(<<0xA5, 0x08, 0x00, 0x00>>)
     end
 
     test "parse variable bigbinary type" do
-      assert {%{type: :binary, sqltype: :binary, size: 8, data_type: :variable}, <<0x00>>} ==
+      assert {%{type: :binary, sqltype: :bigbinary, size: 8, data_type: :variable}, <<0x00>>} ==
         Info.parse(<<0xAD, 0x08, 0x00, 0x00>>)
     end
 
     test "parse variable xml type" do
-      assert {%{type: :string, sqltype: :xml, size: 8, data_type: :variable}, <<0x00>>} ==
+      assert {%{type: :longstring, sqltype: :xml, size: 8, data_type: :variable}, <<0x00>>} ==
         Info.parse(<<0xF1, 0x08, 0x00, 0x00, 0x00, 0x00>>)
     end
 
@@ -195,12 +195,12 @@ defmodule ExTdsTest.ExTds.Type.InfoTest do
     end
 
     test "parse variable text type" do
-      assert {%{type: :string, sqltype: :text, size: 8, data_type: :variable, collation: %{charset: 1, code_page: 256, flags: 257}}, <<0x00>>} ==
+      assert {%{type: :longstring, sqltype: :text, size: 8, data_type: :variable, collation: %{charset: 1, code_page: 256, flags: 257}}, <<0x00>>} ==
         Info.parse(<<0x23, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00>>)
     end
 
     test "parse variable ntext type" do
-      assert {%{type: :string, sqltype: :ntext, size: 8, data_type: :variable, collation: %{charset: 1, code_page: 256, flags: 257}}, <<0x00>>} ==
+      assert {%{type: :longstring, sqltype: :ntext, size: 8, data_type: :variable, collation: %{charset: 1, code_page: 256, flags: 257}}, <<0x00>>} ==
         Info.parse(<<0x63, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00>>)
     end
 
